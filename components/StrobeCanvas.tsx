@@ -1,12 +1,11 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StrobeStyle } from '../types';
 
 interface StrobeCanvasProps {
   frequency: number; 
   colors: string[];
   isActive: boolean;
-  intensity: number;
   style: StrobeStyle;
   audioLevel?: number; // 0 to 1
 }
@@ -15,70 +14,71 @@ const StrobeCanvas: React.FC<StrobeCanvasProps> = ({
   frequency, 
   colors, 
   isActive, 
-  intensity, 
   style,
   audioLevel = 0
 }) => {
-  const requestRef = useRef<number>();
+  const canvasRef = useRef<HTMLDivElement>(null);
   const lastToggleTimeRef = useRef<number>(0);
   const colorIndexRef = useRef<number>(0);
-  const [isOn, setIsOn] = useState(false);
+  const isOnRef = useRef<boolean>(false);
 
   useEffect(() => {
+    let requestHandle: number;
+
     const animate = (time: number) => {
-      if (!isActive) {
-        setIsOn(false);
-        requestRef.current = requestAnimationFrame(animate);
+      if (!isActive || !canvasRef.current) {
+        if (canvasRef.current) canvasRef.current.style.backgroundColor = '#000000';
         return;
       }
 
-      // Determine the effective frequency based on style
       let effectiveFreq = frequency;
-      
       if (style === StrobeStyle.AUDIO) {
-        // Map audio level (0-1) to frequency (e.g., 0Hz to 40Hz)
-        effectiveFreq = audioLevel * 50;
+        effectiveFreq = audioLevel * 60; // Up to 60Hz
       }
 
-      const cycleMs = 1000 / (effectiveFreq * 2);
+      const cycleMs = effectiveFreq > 0 ? 1000 / (effectiveFreq * 2) : Infinity;
 
       if (style === StrobeStyle.RANDOM) {
-        // Randomly decide to toggle if threshold met
         if (Math.random() < (effectiveFreq / 60)) {
-          setIsOn(prev => !prev);
-          if (!isOn) colorIndexRef.current = Math.floor(Math.random() * colors.length);
+          isOnRef.current = !isOnRef.current;
+          if (isOnRef.current) colorIndexRef.current = Math.floor(Math.random() * colors.length);
         }
       } else if (effectiveFreq > 0) {
         if (time - lastToggleTimeRef.current >= cycleMs) {
-          setIsOn((prev) => !prev);
+          isOnRef.current = !isOnRef.current;
           lastToggleTimeRef.current = time;
-          if (!isOn) {
+          if (isOnRef.current) {
             colorIndexRef.current = (colorIndexRef.current + 1) % colors.length;
           }
         }
       } else {
-        setIsOn(false);
+        isOnRef.current = false;
       }
+
+      const color = isOnRef.current ? colors[colorIndexRef.current] : '#000000';
+      canvasRef.current.style.backgroundColor = color;
       
-      requestRef.current = requestAnimationFrame(animate);
+      requestHandle = requestAnimationFrame(animate);
     };
 
-    requestRef.current = requestAnimationFrame(animate);
+    if (isActive) {
+      requestHandle = requestAnimationFrame(animate);
+    } else {
+      if (canvasRef.current) canvasRef.current.style.backgroundColor = '#000000';
+    }
+
     return () => {
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      if (requestHandle) cancelAnimationFrame(requestHandle);
     };
-  }, [frequency, isActive, isOn, colors, style, audioLevel]);
-
-  const currentColor = isOn ? colors[colorIndexRef.current] : '#000000';
+  }, [frequency, isActive, colors, style, audioLevel]);
 
   return (
     <div 
+      ref={canvasRef}
       className="fixed inset-0 z-0"
       style={{ 
-        backgroundColor: currentColor,
-        opacity: intensity,
-        // Smooth transition for PULSE style
-        transition: style === StrobeStyle.PULSE ? 'background-color 0.2s ease-in-out' : 'none'
+        backgroundColor: '#000000',
+        transition: style === StrobeStyle.PULSE ? 'background-color 0.15s ease-in-out' : 'none'
       }}
     />
   );

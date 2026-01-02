@@ -8,6 +8,5 @@ export enum StrobeStyle {
 
 export enum AppState {
   DISCLAIMER = 'DISCLAIMER',
-  IDLE = 'IDLE',
-  RUNNING = 'RUNNING'
+  IDLE = 'IDLE'
 }
