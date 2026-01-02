@@ -1,0 +1,7 @@
+{
+  "name": "StrobeAI - High-Power Visual Sync",
+  "description": "A high-performance strobe light application featuring AI-powered scene generation, frequency precision, and safety-first design.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
