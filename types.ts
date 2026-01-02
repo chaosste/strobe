@@ -1,9 +1,9 @@
 
-export interface StrobePattern {
-  name: string;
-  colors: string[];
-  frequencyMultiplier: number; // 1.0 is default, 2.0 is double speed, etc.
-  description: string;
+export enum StrobeStyle {
+  FIXED = 'FIXED',
+  RANDOM = 'RANDOM',
+  PULSE = 'PULSE',
+  AUDIO = 'AUDIO'
 }
 
 export enum AppState {
