@@ -75,15 +75,32 @@ const App: React.FC = () => {
     };
   }, [style, isActive]);
 
-  const uiWrapperStyle = useMemo(() => {
-    if (!isActive) return { opacity: 1, filter: 'none' };
+  // Completely fade out UI when active
+  const uiWrapperStyle = useMemo(() => ({
+    opacity: isActive ? 0 : 1,
+    visibility: isActive ? 'hidden' as const : 'visible' as const,
+    transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s',
+    pointerEvents: isActive ? 'none' as const : 'auto' as const
+  }), [isActive]);
+
+  // Theme the button based on the selected color
+  const activeColor = colors[0];
+  const buttonStyle = useMemo(() => {
+    if (isActive) {
+      return {
+        backgroundColor: `${activeColor}1a`, // 10% opacity
+        color: activeColor,
+        borderColor: `${activeColor}66`, // 40% opacity
+        boxShadow: `0 0 40px ${activeColor}33`,
+      };
+    }
     return {
-      opacity: 0.25,
-      filter: 'grayscale(1) brightness(0.8)',
-      transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-      pointerEvents: 'none' as const
+      backgroundColor: activeColor,
+      color: activeColor === '#ffffff' || activeColor === '#ffff3e' ? '#000000' : '#ffffff',
+      borderColor: 'transparent',
+      boxShadow: `0 20px 40px -10px ${activeColor}4d`,
     };
-  }, [isActive]);
+  }, [isActive, activeColor]);
 
   if (state === AppState.DISCLAIMER) {
     return (
@@ -121,15 +138,12 @@ const App: React.FC = () => {
         audioLevel={audioLevel}
       />
 
-      {/* Persistent Play/Pause Button - Outside the fading container for visibility */}
+      {/* Persistent Play/Pause Button - Responsive to selected theme color */}
       <div className="fixed inset-0 z-20 flex flex-col items-center justify-center pointer-events-none">
         <button 
           onClick={(e) => { e.stopPropagation(); setIsActive(!isActive); }}
-          className={`w-28 h-28 rounded-full flex items-center justify-center transition-all duration-700 transform pointer-events-auto ${
-            isActive 
-            ? 'bg-red-500/20 text-red-500 border-2 border-red-500/40 shadow-[0_0_60px_rgba(239,68,68,0.3)] scale-110' 
-            : 'bg-white text-black shadow-2xl hover:scale-105'
-          }`}
+          style={buttonStyle}
+          className="w-28 h-28 rounded-full flex items-center justify-center transition-all duration-700 transform pointer-events-auto border-2 active:scale-90"
         >
           {isActive ? (
             <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
@@ -184,11 +198,13 @@ const App: React.FC = () => {
                 <button 
                   key={c} 
                   onClick={() => setColors([c, '#000000'])}
-                  className={`w-8 h-8 rounded-full transition-all border-2 ${
+                  className={`w-10 h-10 rounded-full transition-all border-2 flex items-center justify-center ${
                     colors[0] === c ? 'border-white scale-125' : 'border-transparent opacity-40 hover:opacity-100'
                   }`}
                   style={{ backgroundColor: c }}
-                />
+                >
+                  {colors[0] === c && <div className="w-1.5 h-1.5 rounded-full bg-black/20" />}
+                </button>
               ))}
             </div>
           </div>
