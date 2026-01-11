@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 
+# Environment variables - CRITICAL: Keep API keys out of git!
 .env
 .env.local
 .env.*.local
