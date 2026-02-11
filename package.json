@@ -18,5 +18,20 @@
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
-  }
+  },
+  "description": "High-performance strobe light application with audio reactivity, frequency control, and photosensitivity safety",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chaosste/strobe"
+  },
+  "keywords": [
+    "strobe-light",
+    "audio-reactive",
+    "web-audio-api",
+    "frequency-control",
+    "react",
+    "typescript"
+  ],
+  "author": "Stephen Beale",
+  "license": "MIT"
 }
