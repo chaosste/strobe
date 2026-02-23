@@ -4,19 +4,27 @@ import StrobeCanvas from './components/StrobeCanvas';
 import { AppState, StrobeStyle } from './types';
 
 const App: React.FC = () => {
+  const SAFE_MAX_HZ = 20;
+  const ABSOLUTE_MAX_HZ = 60;
   const [state, setState] = useState<AppState>(AppState.DISCLAIMER);
   const [frequency, setFrequency] = useState(10);
   const [colors, setColors] = useState(['#ffffff', '#000000']);
   const [style, setStyle] = useState<StrobeStyle>(StrobeStyle.FIXED);
   const [isActive, setIsActive] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [safetyLock, setSafetyLock] = useState(true);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const handleStart = () => setState(AppState.IDLE);
 
   const safeCloseAudioContext = async () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       try {
         await audioContextRef.current.close();
@@ -37,6 +45,7 @@ const App: React.FC = () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           if (!isMounted) return;
+          streamRef.current = stream;
           
           const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
           const analyser = ctx.createAnalyser();
@@ -136,6 +145,7 @@ const App: React.FC = () => {
         isActive={isActive} 
         style={style}
         audioLevel={audioLevel}
+        maxFrequency={safetyLock ? SAFE_MAX_HZ : ABSOLUTE_MAX_HZ}
       />
 
       {/* Persistent Play/Pause Button - Responsive to selected theme color */}
@@ -171,10 +181,31 @@ const App: React.FC = () => {
                 <span className="text-white font-mono text-xl">{style === StrobeStyle.AUDIO ? 'VOX' : `${frequency.toFixed(1)}Hz`}</span>
               </div>
               <input 
-                type="range" min="0.5" max="60" step="0.5" value={frequency}
-                onChange={(e) => { setFrequency(parseFloat(e.target.value)); setStyle(StrobeStyle.FIXED); }}
+                type="range" min="0.5" max={safetyLock ? SAFE_MAX_HZ : ABSOLUTE_MAX_HZ} step="0.5" value={frequency}
+                onChange={(e) => {
+                  const next = parseFloat(e.target.value);
+                  setFrequency(next);
+                  setStyle(StrobeStyle.FIXED);
+                }}
                 className="w-full h-1.5 bg-zinc-800 rounded-full appearance-none cursor-pointer accent-blue-500"
               />
+              <div className="flex items-center justify-between pt-2 text-[10px]">
+                <label className="flex items-center gap-2 text-zinc-400 uppercase tracking-wider font-bold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={safetyLock}
+                    onChange={(e) => {
+                      const locked = e.target.checked;
+                      setSafetyLock(locked);
+                      if (locked && frequency > SAFE_MAX_HZ) {
+                        setFrequency(SAFE_MAX_HZ);
+                      }
+                    }}
+                  />
+                  Safety Lock ({SAFE_MAX_HZ}Hz max)
+                </label>
+                {!safetyLock && <span className="text-amber-400 uppercase tracking-wider font-black">Advanced mode</span>}
+              </div>
             </div>
 
             <div className="grid grid-cols-4 gap-2">

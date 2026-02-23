@@ -5,6 +5,7 @@
  */
 
 const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'https://gemini-proxy-572556903588.us-central1.run.app';
+const PROXY_TIMEOUT_MS = Number(import.meta.env.VITE_PROXY_TIMEOUT_MS || 20000);
 
 interface GenerateContentRequest {
   model: string;
@@ -27,12 +28,16 @@ interface GenerateContentResponse {
 export const generateContent = async (
   request: GenerateContentRequest
 ): Promise<GenerateContentResponse> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+
   try {
     const response = await fetch(`${PROXY_URL}/v1/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
       body: JSON.stringify({
         model: request.model,
         prompt: request.contents,
@@ -43,7 +48,7 @@ export const generateContent = async (
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await response.text().catch(() => '');
       throw new Error(`Proxy request failed: ${response.status} - ${errorText}`);
     }
 
@@ -55,6 +60,8 @@ export const generateContent = async (
   } catch (error) {
     console.error('Proxy service error:', error);
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 
