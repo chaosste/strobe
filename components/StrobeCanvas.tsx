@@ -8,6 +8,7 @@ interface StrobeCanvasProps {
   isActive: boolean;
   style: StrobeStyle;
   audioLevel?: number; // 0 to 1
+  maxFrequency?: number;
 }
 
 const StrobeCanvas: React.FC<StrobeCanvasProps> = ({ 
@@ -15,7 +16,8 @@ const StrobeCanvas: React.FC<StrobeCanvasProps> = ({
   colors, 
   isActive, 
   style,
-  audioLevel = 0
+  audioLevel = 0,
+  maxFrequency = 60
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const lastToggleTimeRef = useRef<number>(0);
@@ -33,8 +35,9 @@ const StrobeCanvas: React.FC<StrobeCanvasProps> = ({
 
       let effectiveFreq = frequency;
       if (style === StrobeStyle.AUDIO) {
-        effectiveFreq = audioLevel * 60; // Up to 60Hz
+        effectiveFreq = audioLevel * maxFrequency;
       }
+      effectiveFreq = Math.min(effectiveFreq, maxFrequency);
 
       const cycleMs = effectiveFreq > 0 ? 1000 / (effectiveFreq * 2) : Infinity;
 
